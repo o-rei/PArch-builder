@@ -1,6 +1,8 @@
 # pbuilder
 
-Build reproducible system images from platform manifests.
+## Reproducible builds of 🥵PArch
+
+Build reproducible system images from platform manifests to build the PArch platform for **P**i-style single-board computers, based on the **Arch** Linux operating system.
 
 ## Usage
 
