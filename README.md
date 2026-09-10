@@ -2,16 +2,30 @@
 
 ## Reproducible builds of 🥵PArch
 
-Build reproducible system images from platform manifests to build the PArch platform for **P**i-style single-board computers, based on the **Arch** Linux operating system.
+Build reproducible system images from platform manifests to build the PArch
+platform for **P**i-style single-board computers (SBCs), based on the **Arch**
+Linux operating system.
 
 ## Usage
 
-```sh
-cargo run -- fetch <platform> [--overwrite]
-```
+Fetch or build for the SBC model
 
 ```sh
-cargo run -- build <target> [--dryrun]
+cargo run -- fetch <sbc_platform> [--overwrite]
+```
+
+Example:
+
+```sh
+cargo run -- fetch rpi2w --overwrite
+```
+
+
+```
+### Build
+
+```sh
+cargo run -- build <sbc_platform> [--dryrun]
 ```
 
 Example:
