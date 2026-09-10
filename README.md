@@ -7,6 +7,10 @@ Build reproducible system images from platform manifests to build the PArch plat
 ## Usage
 
 ```sh
+cargo run -- fetch <platform> [--overwrite]
+```
+
+```sh
 cargo run -- build <target> [--dryrun]
 ```
 

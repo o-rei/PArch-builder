@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 #[command(
     name = "pb",
     version,
-    about = "Build reproducible system images from platform manifests"
+    about = "Build reproducible system images from sbc_model manifests"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -18,15 +18,15 @@ struct Cli {
 enum Commands {
     /// Fetch a source from the manifest
     Fetch {
-        /// Platform name indicating yml in manifests
-        platform: String,
+        /// sbc_model name indicating yml in manifests
+        sbc_model: String,
         overwrite: bool,
     },
 
     /// Build one or more targets from a manifest
     Build {
         /// Manifest target, such as rpi5
-        platform: String,
+        sbc_model: String,
 
         /// Show the plan without modifying anything
         #[arg(long)]
@@ -39,14 +39,16 @@ enum Commands {
 
 
 fn main() {
+
     let cli = Cli::parse();
 
     match cli.command {
 
         // FETCH
-        Commands::Fetch { platform, overwrite } => {
+        Commands::Fetch { sbc_model, overwrite } => {
 
-            println!("Going to fetch for the {} platform", platform);
+            println!("Going to fetch for the single-board computer model {}",
+                     sbc_model);
 
             let mut overwrite_msg = "We wouldn't overwrite if it existed.";
             if overwrite {
@@ -57,8 +59,8 @@ fn main() {
         }
 
         // BUILD
-        Commands::Build { platform, dryrun } => {
-            println!("target: {platform}");
+        Commands::Build { sbc_model, dryrun } => {
+            println!("target: {sbc_model}");
             println!("dry run: {dryrun}");
         }
 
