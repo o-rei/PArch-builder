@@ -24,7 +24,7 @@ Early development. The interface and manifest format may change.
 
 Licensed under the Apache License, Version 2.0. See [LICENSE.txt](LICENSE.txt).
 
-Copyright 2026 Sustainable Inference.
+Copyright 2026 Matt Turner https://mat.phd
 
 This repository contains the public, general-purpose builder. Production recipes, infrastructure, signing materials, and internal processes are maintained separately.
 
