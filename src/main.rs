@@ -1,6 +1,7 @@
 //! Builder for Arch Linux on Pi-style Platforms.
 use clap::{Parser, Subcommand};
 
+mod downloader;
 
 #[derive(Parser)]
 #[command(
@@ -20,6 +21,8 @@ enum Commands {
     Fetch {
         /// sbc_model name indicating yml in manifests
         sbc_model: String,
+        /// Whether to overwrite existing foundations
+        #[arg(long)]
         overwrite: bool,
     },
 
@@ -72,3 +75,15 @@ fn main() {
         }
     }
 }
+
+
+// fn download_source(source_url, dest_file) -> Result<Vec<Result<DownloadSummary>>> {
+//     let download = Download::new(source_url);
+
+//     Downloader::download(download)
+// }
+
+
+// fn read_manifest(manifest_file) {
+
+// }
