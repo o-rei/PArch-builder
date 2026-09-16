@@ -1,7 +1,9 @@
 //! Builder for Arch Linux on Pi-style Platforms.
-use clap::{Parser, Subcommand};
+mod manifest;
+mod fetch;
 
-mod downloader;
+use clap::{Parser, Subcommand};
+// use crate::fetch::fetch;
 
 #[derive(Parser)]
 #[command(
@@ -17,10 +19,13 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+
     /// Fetch a source from the manifest
     Fetch {
+
         /// sbc_model name indicating yml in manifests
         sbc_model: String,
+
         /// Whether to overwrite existing foundations
         #[arg(long)]
         overwrite: bool,
@@ -41,7 +46,7 @@ enum Commands {
 }
 
 
-async fn main() {
+fn main() {
 
     let cli = Cli::parse();
 
@@ -50,10 +55,10 @@ async fn main() {
         // FETCH
         Commands::Fetch { sbc_model, overwrite } => {
 
-            println!("Going to fetch the foundation for the single-board computer model {}", sbc_model);
+            println!("Fetching the foundation for SBC model {}", sbc_model);
 
-            let manifest = manifest::read(sbc_model);
-            fetch(manifest.foundation_url, cache_dir, overwrite).await?;
+            // let manifest = manifest::read(&sbc_model);
+            // fetch(manifest.foundation_url, overwrite);
         }
 
         // BUILD
@@ -72,13 +77,3 @@ async fn main() {
 }
 
 
-// fn download_source(source_url, dest_file) -> Result<Vec<Result<DownloadSummary>>> {
-//     let download = Download::new(source_url);
-
-//     Downloader::download(download)
-// }
-
-
-// fn read_manifest(manifest_file) {
-
-// }
