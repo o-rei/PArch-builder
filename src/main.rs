@@ -41,7 +41,7 @@ enum Commands {
 }
 
 
-fn main() {
+async fn main() {
 
     let cli = Cli::parse();
 
@@ -50,15 +50,10 @@ fn main() {
         // FETCH
         Commands::Fetch { sbc_model, overwrite } => {
 
-            println!("Going to fetch for the single-board computer model {}",
-                     sbc_model);
+            println!("Going to fetch the foundation for the single-board computer model {}", sbc_model);
 
-            let mut overwrite_msg = "We wouldn't overwrite if it existed.";
-            if overwrite {
-                overwrite_msg = "We would overwrite if it existed.";
-            }
-
-            println!("{}", overwrite_msg);
+            let manifest = manifest::read(sbc_model);
+            fetch(manifest.foundation_url, cache_dir, overwrite).await?;
         }
 
         // BUILD
