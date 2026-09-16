@@ -1,10 +1,6 @@
 //! Builder for Arch Linux on Pi-style Platforms.
 use clap::{Parser, Subcommand};
 
-mod manifest;
-mod fetch;
-
-
 #[derive(Parser)]
 #[command(
     name = "pb",
@@ -46,7 +42,7 @@ enum Commands {
 }
 
 
-fn main() {
+fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
 
@@ -55,18 +51,21 @@ fn main() {
         // *** FETCH ***
         Commands::Fetch { sbc_model, overwrite } => {
 
-            println!("Fetching the foundation for SBC model {}", sbc_model);
+            println!("Fetching the foundation for SBC model {}...", sbc_model);
 
-            // Read the manifest for the SBC model
-            let manifest = manifest::read(&sbc_model).unwrap();
-            // Use the foundation URL field to fetch the root file system
-            fetch::fetch(manifest.foundation_url, overwrite).unwrap();
+            pbuilder::read_manifest_and_fetch_foundation(
+                &sbc_model, overwrite
+            )?;
+
+            Ok(())
         }
 
         // *** BUILD CARTÕES ***
         Commands::Build { sbc_model, dryrun } => {
             println!("target: {sbc_model}");
             println!("dry run: {dryrun}");
+
+            Ok(())
         }
 
         // *** LIST ***
@@ -74,8 +73,9 @@ fn main() {
             println!("rpi5");
             println!("rpi2w");
             println!("opi3");
+
+            Ok(())
         }
     }
 }
-
 

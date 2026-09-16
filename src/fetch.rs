@@ -1,10 +1,10 @@
 //! Fetches and caches foundation filesystem archives.
 use std::path::PathBuf;
-use std::io::Write;
 use std::fs::File;
 
 use anyhow::{Context, Result};
 use directories::BaseDirs;
+use indicatif::{ProgressBar, ProgressStyle};
 
 
 fn foundation_cache_dir() -> Result<PathBuf> {
@@ -31,8 +31,6 @@ pub fn fetch(
         overwrite: bool
     ) -> anyhow::Result<(), anyhow::Error> {
 
-    eprintln!("Fetching {url:?}...");
-
     // Now split URL to take last part (filename) and append to savepath
     let filename =
         url.path_segments()
@@ -49,14 +47,38 @@ pub fn fetch(
     }
 
     // Get the payload to write to file
-    let payload = &reqwest::blocking::get(url.as_str())?.bytes()?;
+    let response = reqwest::blocking::get(
+        url.as_str()
+    )?.error_for_status()?;
 
-    // Create file and write payload
-    File::create(savepath)?.write_all(payload)?;
+    let progress = match response.content_length() {
+        Some(length) => ProgressBar::new(length),
+        None => ProgressBar::no_length(),
+    };
+
+
+    progress.set_style(
+    ProgressStyle::with_template(
+        "\x1b[36m{spinner} [\x1b[0m\
+         {bar:40.cyan/blue}\
+         \x1b[36m] {bytes}/{total_bytes} \
+         ({bytes_per_sec}, {eta})\x1b[0m"
+    )?
+    .progress_chars("•  "),
+);
+
+    let mut source = progress.wrap_read(response);
+    let mut destination = File::create(&savepath)?;
+
+    std::io::copy(
+        &mut source,
+        &mut destination,
+    )?;
+
+    progress.finish_with_message("Downloaded");
 
     Ok(())
 }
-
 
 
 #[cfg(test)]
@@ -65,6 +87,7 @@ mod tests {
 
     #[test]
     fn fetches_rust_logo() -> Result<()> {
+
         let url = reqwest::Url::parse(
             "https://www.rust-lang.org/static/images/rust-logo-blk.svg"
         )?;

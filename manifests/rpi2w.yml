@@ -1,1 +1,9 @@
-foundation: https://aur.archlinux.org/rpi-current.tar.gz
+sbc_model: rpi2w
+sbc_long_name: "Raspberry Pi Zero 2W"
+foundation_url: http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz
+
+description: "Mainline Arch Linux kernel with minimum drivers and headers for the RPi Zero 2W"
+
+links:
+  - https://archlinuxarm.org/platforms/armv8/broadcom/raspberry-pi-zero-2
+  - https://github.com/passard/ArchLinux-ARM-Raspberry-Pi

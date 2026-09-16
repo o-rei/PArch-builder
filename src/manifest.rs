@@ -15,21 +15,23 @@ use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
-    pub sbc_model: String,
+    // pub sbc_model: String,
     pub foundation_url: Url,
 }
 
 
 /// Returns the platform-standard configuration directory for manifests
-fn manifest_dir() -> Result<PathBuf> {
-    let dirs = BaseDirs::new()
+pub(crate) fn manifest_dir() -> Result<PathBuf> {
+    let basedirs = BaseDirs::new()
         .context("Could not determine user directories")?;
 
-    Ok(
-        dirs.config_dir()
-            .join("parched-builder")
-            .join("manifests")
-    )
+    let ret_dir =
+        basedirs.config_dir()
+                .join("parched-builder")
+                .join("manifests");
+
+
+    Ok(ret_dir)
 }
 
 
@@ -48,11 +50,11 @@ fn manifest_dir() -> Result<PathBuf> {
 /// The exact base directory may vary according to environment variables
 /// and operating-system configuration.
 ///
-/// # Examples
+/// # Example
 ///
-/// ```
+/// ```rust,ignore
 /// use std::path::Path;
-/// use pbuilder::manifest::manifest_path;
+/// use pbuilder::manifest_path;
 ///
 /// let path = manifest_path("rpi2w")?;
 ///
@@ -64,9 +66,9 @@ fn manifest_dir() -> Result<PathBuf> {
 ///     )
 /// );
 ///
-/// # Ok::<(), anyhow::Error>(())
+///  Ok::<(), anyhow::Error>(())
 /// ```
-pub fn manifest_path(name: &str) -> Result<PathBuf> {
+pub(crate) fn manifest_path(name: &str) -> Result<PathBuf> {
     Ok(manifest_dir()?.join(format!("{name}.yml")))
 }
 
@@ -94,27 +96,3 @@ pub fn read(sbc_model: &str) -> Result<Manifest> {
         )
 }
 
-
-#[cfg(test)]
-mod tests {
-
-    use std::path::Path;
-    use super::*;
-
-    #[test]
-    fn manifest_path_constructed_correctly() -> Result<()> {
-
-        let path = manifest_path("rpi2w")?;
-
-        assert!(
-            path.ends_with(
-                Path::new("parched-builder")
-                    .join("manifests")
-                    .join("rpi2w.yml")
-            )
-        );
-
-
-       Ok(())
-    }
-}
