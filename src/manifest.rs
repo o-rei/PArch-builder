@@ -97,23 +97,24 @@ pub fn read(sbc_model: &str) -> Result<Manifest> {
 
 #[cfg(test)]
 mod tests {
- use std::path::Path;
- use super::*;
 
-#[test]
-fn manifest_path_constructed_correctly() -> Result<()> {
+    use std::path::Path;
+    use super::*;
 
-    let path = manifest_path("rpi2w")?;
+    #[test]
+    fn manifest_path_constructed_correctly() -> Result<()> {
 
-    assert!(
-        path.ends_with(
-            Path::new("parched-builder")
-                .join("manifests")
-                .join("rpi2w.yml")
-        )
-    );
+        let path = manifest_path("rpi2w")?;
+
+        assert!(
+            path.ends_with(
+                Path::new("parched-builder")
+                    .join("manifests")
+                    .join("rpi2w.yml")
+            )
+        );
 
 
-   Ok(())
-}
+       Ok(())
+    }
 }
