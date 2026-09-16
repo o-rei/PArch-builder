@@ -8,14 +8,20 @@ use directories::BaseDirs;
 
 
 fn foundation_cache_dir() -> Result<PathBuf> {
+
     let dirs = BaseDirs::new()
         .context("Could not determine user directories")?;
 
-    Ok(
+    let cache_dir =
         dirs.cache_dir()
             .join("parched-builder")
-            .join("foundations")
-    )
+            .join("foundations");
+
+    if !cache_dir.exists() {
+        std::fs::create_dir_all(&cache_dir)?;
+    }
+
+    Ok(cache_dir)
 }
 
 /// Fetch the resource at the given URL and save. The user must explicitly

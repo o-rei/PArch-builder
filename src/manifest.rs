@@ -15,7 +15,7 @@ use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
-    pub name: String,
+    pub sbc_model: String,
     pub foundation_url: Url,
 }
 
@@ -71,10 +71,10 @@ pub fn manifest_path(name: &str) -> Result<PathBuf> {
 }
 
 
-pub fn read(platform_code: &str) -> Result<Manifest> {
+pub fn read(sbc_model: &str) -> Result<Manifest> {
 
     // Build the path to the manifest file based on given name
-    let path = manifest_path(platform_code)?;
+    let path = manifest_path(sbc_model)?;
 
     // Read manifest YAML into memory
     let contents = fs::read_to_string(&path)
@@ -84,15 +84,36 @@ pub fn read(platform_code: &str) -> Result<Manifest> {
             )
         )?;
 
-    // Parse manifest YAML contents
-    let yaml = serde_yaml::from_str(&contents)
+    // Parse manifest contents, returning result as Manifest thru introspection
+    serde_yaml::from_str(&contents)
         .with_context(
             || format!(
                 "Could not parse manifest {}",
                 path.display()
             )
-        );
+        )
+}
 
-    println!("{:?}", yaml);
-    yaml
+
+#[cfg(test)]
+mod tests {
+ use std::path::Path;
+ use super::*;
+
+#[test]
+fn manifest_path_constructed_correctly() -> Result<()> {
+
+    let path = manifest_path("rpi2w")?;
+
+    assert!(
+        path.ends_with(
+            Path::new("parched-builder")
+                .join("manifests")
+                .join("rpi2w.yml")
+        )
+    );
+
+
+   Ok(())
+}
 }
