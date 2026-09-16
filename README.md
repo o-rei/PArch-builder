@@ -10,6 +10,8 @@ Linux operating system.
 
 Fetch or build for the SBC model
 
+### Fetch
+
 ```sh
 cargo run -- fetch <sbc_platform> [--overwrite]
 ```
@@ -21,7 +23,6 @@ cargo run -- fetch rpi2w --overwrite
 ```
 
 
-```
 ### Build
 
 ```sh
