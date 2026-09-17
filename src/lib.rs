@@ -1,5 +1,6 @@
 pub mod fetch;
 pub mod manifest;
+pub mod image;
 
 
 pub fn read_manifest_and_fetch_foundation(
@@ -21,6 +22,7 @@ pub fn read_manifest_and_fetch_foundation(
 //
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use anyhow::{Context,Result};
     use directories::BaseDirs;
