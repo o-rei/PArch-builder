@@ -12,6 +12,7 @@ pub struct LoopDevice {
 
 
 impl LoopDevice {
+
     pub fn path(&self) -> &Path {
         &self.path
     }
@@ -19,6 +20,23 @@ impl LoopDevice {
     pub fn keep(mut self) -> PathBuf {
         self.detach_on_drop = false;
         self.path.clone()
+    }
+
+    pub fn detach(&mut self) {
+
+        match detach_loop_device(self) {
+            // On success, remove guard for Drop trait
+            Ok(()) => {
+                self.detach_on_drop = false;
+            }
+
+            Err(error) => {
+                eprintln!(
+                    "Error encountered gracefully detaching from loop device: {}",
+                    error
+                );
+            }
+        };
     }
 }
 
@@ -60,7 +78,7 @@ fn create_loop_device(
 }
 
 
-fn detach_loop_device(device: &mut LoopDevice) {
+fn detach_loop_device(device: &mut LoopDevice) -> anyhow::Result<()> {
     match
         Command::new("losetup")
               .arg("--detach")
@@ -68,17 +86,23 @@ fn detach_loop_device(device: &mut LoopDevice) {
               .status()
     {
 
-        Ok(status) if status.success() => {}
+        Ok(status) if status.success() => { Ok(()) }
 
-        Ok(status) => eprintln!(
-            "losetup failed to detach {}: {status}",
-            device.path.display()
-        ),
+        Ok(status) => {
+            eprintln!("losetup failed to detach {}: {status}",
+                      device.path.display());
+            Ok(())
+        }
 
-        Err(error) => eprintln!(
-            "could not run losetup for {}: {error}",
-            device.path.display()
-        ),
+        Err(error) => {
+
+            eprintln!(
+                "could not run losetup for {}: {error}",
+                device.path.display()
+            );
+
+            Err(anyhow::Error::new(error))
+        }
     }
 }
 
@@ -88,9 +112,10 @@ impl Drop for LoopDevice {
     fn drop(&mut self) {
 
         if self.detach_on_drop {
-            detach_loop_device(self)
+            self.detach();
         }
     }
+
 }
 
 
