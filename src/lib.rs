@@ -2,19 +2,21 @@ pub mod fetch;
 pub mod manifest;
 pub mod image;
 
+use std::path::PathBuf;
+
 
 pub fn read_manifest_and_fetch_foundation(
     sbc_model: &str,
-    overwrite: bool) -> anyhow::Result<()> {
+    overwrite: bool) -> anyhow::Result<PathBuf> {
 
 
     // Fetch the foundation URL field stored in the manifest of interest
-    fetch::fetch(
+    let foundation_path = fetch::fetch(
         manifest::read(sbc_model)?.foundation_url,
         overwrite
     )?;
 
-    Ok(())
+    Ok(foundation_path)
 }
 
 
@@ -39,7 +41,7 @@ mod tests {
 
         assert!(
             path.ends_with(
-                Path::new("parched-builder")
+                Path::new("parch-builder")
                     .join("manifests")
                     .join("rpi2w.yml")
             )
@@ -86,7 +88,7 @@ foundation_url: https://rust-lang.org/static/images/rust-logo-blk.svg"
         // Find the "foundation" we downloaded
         let downloaded_foundation = dirs
             .cache_dir()
-            .join("parched-builder")
+            .join("parch-builder")
             .join("foundations")
             .join("rust-logo-blk.svg");
 

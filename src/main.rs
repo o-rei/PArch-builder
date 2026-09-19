@@ -25,6 +25,10 @@ enum Commands {
         /// Whether to overwrite existing foundations
         #[arg(long)]
         overwrite: bool,
+
+        /// Whether to create a .img from the fetched .tar.gz
+        #[arg(long)]
+        create_img: bool,
     },
 
     /// Build one or more targets from a manifest
@@ -49,13 +53,25 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
 
         // *** FETCH ***
-        Commands::Fetch { sbc_model, overwrite } => {
+        Commands::Fetch { sbc_model, overwrite, create_img } => {
 
             println!("Fetching the foundation for SBC model {}...", sbc_model);
 
-            pbuilder::read_manifest_and_fetch_foundation(
+            let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
                 &sbc_model, overwrite
             )?;
+
+            println!("Foundation acquired for SBC model {}", sbc_model);
+            println!("Foundation stored at {}", foundation_path.display());
+
+            if create_img {
+                let image_path = pbuilder::image::create_img(
+                    &sbc_model,
+                    &foundation_path,
+                    overwrite
+                )?;
+            }
+
 
             Ok(())
         }

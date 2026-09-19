@@ -41,6 +41,19 @@ pub trait BlockDevice {
 }
 
 
+pub fn create_img(
+    sbc_model: &str,
+    foundation_path: impl AsRef<Path>,
+    overwrite: bool,
+) -> anyhow::Result<PathBuf> {
+
+
+
+
+    return Ok(PathBuf::new());
+}
+
+
 pub struct LoopDevice {
     path: PathBuf,
     detach_on_drop: bool,
@@ -242,6 +255,18 @@ mod tests {
         assert_eq!(partition_count, 2);
 
         Ok(())
+    }
+
+
+    // Install minimal rpi2w to mock SD card
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn mock_install() -> anyhow::Result<()> {
+        // let dir = tempfile::tempdir()?;
+        // let image_path = dir.path.join("rpi2w.img");
+
+        // let mut device
+        todo!();
     }
 }
 

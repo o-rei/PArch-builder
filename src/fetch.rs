@@ -14,7 +14,7 @@ fn foundation_cache_dir() -> Result<PathBuf> {
 
     let cache_dir =
         dirs.cache_dir()
-            .join("parched-builder")
+            .join("parch-builder")
             .join("foundations");
 
     if !cache_dir.exists() {
@@ -29,21 +29,21 @@ fn foundation_cache_dir() -> Result<PathBuf> {
 pub fn fetch(
         url: reqwest::Url,
         overwrite: bool
-    ) -> anyhow::Result<(), anyhow::Error> {
+    ) -> anyhow::Result<PathBuf> {
 
     // Now split URL to take last part (filename) and append to savepath
-    let filename =
-        url.path_segments()
-           .and_then(|mut segments| segments.next_back())
-           .expect("Reading filename from download URL failed. Check URL.");
+    let filename = url
+        .path_segments()
+       .and_then(|mut segments| segments.next_back())
+       .expect("Reading filename from download URL failed. Check URL.");
 
     // Construct system save path from save dir and the file name from the URL
     let savepath = foundation_cache_dir()?.join(filename);
 
     // If the save path exists already and overwrite is disabled, do nothing
     if savepath.exists() && !overwrite {
-        eprintln!("File exists and overwrite set to false, exiting.");
-        return Ok(());
+        eprintln!("Using cached foundation: {}", savepath.display());
+        return Ok(savepath);
     }
 
     // Get the payload to write to file
@@ -77,7 +77,7 @@ pub fn fetch(
 
     progress.finish_with_message("Downloaded");
 
-    Ok(())
+    Ok(savepath)
 }
 
 
@@ -97,7 +97,9 @@ mod tests {
 
         let existed_before = path.exists();
 
-        fetch(url, false)?;
+        let fetched_path: PathBuf = fetch(url, false)?;
+        assert!(fetched_path.is_file());
+        assert!(fetched_path.metadata()?.len() > 0);
 
         assert!(path.is_file());
         assert!(path.metadata()?.len() > 0);
