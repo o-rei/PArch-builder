@@ -1,8 +1,18 @@
 pub mod fetch;
 pub mod manifest;
 pub mod image;
+pub mod block_device;
 
 use std::path::PathBuf;
+use std::process::Command;
+
+
+fn sudo_cmd(cmd_name: &str) -> std::process::Command {
+    let mut sudo_cmd = Command::new("sudo");
+    sudo_cmd.arg(cmd_name);
+
+    sudo_cmd
+}
 
 
 pub fn read_manifest_and_fetch_foundation(

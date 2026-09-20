@@ -27,7 +27,7 @@ pub(crate) fn manifest_dir() -> Result<PathBuf> {
 
     let ret_dir =
         basedirs.config_dir()
-                .join("parched-builder")
+                .join("parch-builder")
                 .join("manifests");
 
 
@@ -42,9 +42,9 @@ pub(crate) fn manifest_dir() -> Result<PathBuf> {
 /// typically resolves to:
 ///
 /// ```text
-/// Linux:  ~/.config/parched-builder/manifests/rpi2w.yml
-/// macOS:  ~/Library/Application Support/parched-builder/manifests/rpi2w.yml
-/// Windows: C:\Users\Alice\AppData\Roaming\parched-builder\manifests\rpi2w.yml
+/// Linux:  ~/.config/parch-builder/manifests/rpi2w.yml
+/// macOS:  ~/Library/Application Support/parch-builder/manifests/rpi2w.yml
+/// Windows: C:\Users\Alice\AppData\Roaming\parch-builder\manifests\rpi2w.yml
 /// ```
 ///
 /// The exact base directory may vary according to environment variables
@@ -60,7 +60,7 @@ pub(crate) fn manifest_dir() -> Result<PathBuf> {
 ///
 /// assert!(
 ///     path.ends_with(
-///         Path::new("parched-builder")
+///         Path::new("parch-builder")
 ///             .join("manifests")
 ///             .join("rpi2w.yml")
 ///     )
