@@ -20,6 +20,9 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
 
+    /// List available build targets
+    List,
+
     /// Fetch a source from the manifest
     Fetch {
         /// sbc_model name indicating yml in manifests
@@ -43,20 +46,17 @@ enum Commands {
         /// Short name for SBC, eg, rpi2w for the Raspberry Pi Zero 2W
         sbc_model: String,
 
-        /// Device where PArch is to be installed
-        device_path: PathBuf,
+        //// Device where PArch is to be installed
+        // device_path: PathBuf,
 
-        /// Whether to install to a local loop device before writing to the SD
+        //// Whether to install to a local loop device before writing to the SD
         #[arg(long)]
         dryrun: bool,
 
-        /// Whether to persist a local loop device initialized in dry run
-        #[arg(long)]
-        dryrun_persist: bool
+        //// Whether to persist a local loop device initialized in dry run
+        // #[arg(long)]
+        // dryrun_persist: bool
     },
-
-    /// List available build targets
-    List,
 }
 
 
@@ -93,7 +93,6 @@ fn main() -> anyhow::Result<()> {
             if create_img {
                 let image_path = pbuilder::image::create_foundation_img(
                     &sbc_model,
-                    &foundation_path,
                     overwrite,
                     boot_size_mib
                 )?;
@@ -107,7 +106,8 @@ fn main() -> anyhow::Result<()> {
         }
 
         // *** INSTALL TO CARTÕES ***
-        Commands::Install { sbc_model, device_path, dryrun, dryrun_persist } => {
+        // Commands::Install { sbc_model, device_path, dryrun, dryrun_persist } => {
+        Commands::Install { sbc_model, dryrun } => {
             println!("target: {sbc_model}");
             println!("dry run: {dryrun}");
 

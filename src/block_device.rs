@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::Write,
     path::{Path, PathBuf},
-    process::{Command,Stdio}
+    process::Stdio
 };
 
 use anyhow::Context;
@@ -11,11 +11,12 @@ use crate::sudo_cmd;
 
 
 pub trait BlockDevice {
+
     fn path(&self) -> &Path;
 
     #[cfg(target_os = "linux")]
-    fn create_partitions(&mut self, boot_size_mib: u64) -> anyhow::Result<()> {
-        //
+    fn create_partitions(&mut self, boot_size_mib: u64) -> anyhow::Result<PathBuf> {
+
         // 2048 sectors of 512 bytes each per MiB
         // const SECTOR_SIZE_BYTES: u64 = 512;
         const SECTORS_PER_MIB: u64 = 2048;
@@ -52,21 +53,46 @@ start={root_start_sector}, type=83
             anyhow::bail!("sfdisk failed")
         }
 
+        Ok(self.path().to_path_buf())
+    }
+
+    #[cfg(target_os = "linux")]
+    fn format_partitions(&self, partition_paths: &PartitionPaths) -> anyhow::Result<()> {
+
+        sudo_cmd("mkfs.vfat").arg(partition_paths.boot.clone());
+        sudo_cmd("mkfs.ext4").arg(partition_paths.root.clone());
+
         Ok(())
     }
+
+}
+
+
+const IMAGE_SIZE_MIB: u64 = 4096;
+const BOOT_SIZE_MIB: u64 = 512;
+
+const KIB_IN_B: u64 = 1024;
+const MIB_IN_B: u64 = KIB_IN_B * KIB_IN_B;
+
+
+pub struct PartitionPaths {
+    pub boot: PathBuf,
+    pub root: PathBuf
 }
 
 
 pub struct LoopDevice {
     path: PathBuf,
-    detach_on_drop: bool,
+    detach_on_drop: bool
 }
+
 
 impl BlockDevice for LoopDevice {
     fn path(&self) -> &Path {
         &self.path
     }
 }
+
 
 
 impl LoopDevice {
@@ -105,7 +131,9 @@ fn create_loop_device(
 
     let image_path = image_path.as_ref();
 
-    let output = sudo_cmd("losetup")
+    // Wrap the looop device setup tool, losetup, using .img as filesystem base
+    let loop_device_result =
+        sudo_cmd("losetup")
             .args(["--find", "--show", "--partscan"])
             .arg(image_path)
             .output()
@@ -114,14 +142,15 @@ fn create_loop_device(
                         image_path.display())
             )?;
 
-    if !output.status.success() {
+    if !loop_device_result.status.success() {
+
         anyhow::bail!(
             "losetup failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
+            String::from_utf8_lossy(&loop_device_result.stderr).trim()
         );
     }
 
-    let device_path = String::from_utf8_lossy(&output.stdout);
+    let device_path = String::from_utf8_lossy(&loop_device_result.stdout);
     let device_path = device_path.trim();
 
     // To succeed reaching the end of the function, must have device path
@@ -132,7 +161,8 @@ fn create_loop_device(
 
     // To reach here, `losetup` had to succeed and return a device path
     } else {
-        // Return a new loop device handle, specifying whether or not to persist
+
+        // Return a new loop device handle; set detach on default
         Ok(LoopDevice {
             path: PathBuf::from(device_path),
             detach_on_drop: true
@@ -178,7 +208,6 @@ impl Drop for LoopDevice {
             self.detach();
         }
     }
-
 }
 
 
@@ -191,10 +220,10 @@ pub fn mock_sd(
     // Create a mock operating system image .img file at the specified path
     let image = File::create(image_path)?;
 
-    // set the logical length of the data block
-    image.set_len(size_mib * 1024 * 1024)?;
+    // Set the logical length of the data block in MiB
+    image.set_len(size_mib * MIB_IN_B)?;
 
-    // Create and return the LoopDevice loaded with the mock .img
+    // Create and return the LoopDevice, also creating a new .img
     Ok(
         create_loop_device(image_path)
             .context(
@@ -211,6 +240,7 @@ pub fn mock_sd(
 mod tests {
     use super::*;
     use std::os::unix::fs::FileTypeExt;
+    use std::process::Command;
 
     // Block loop device created for mock of SD media
     #[cfg(target_os = "linux")]
@@ -261,15 +291,20 @@ mod tests {
 
 
     // Install minimal rpi2w to mock SD card
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn mock_install() -> anyhow::Result<()> {
-        // let dir = tempfile::tempdir()?;
-        // let image_path = dir.path.join("rpi2w.img");
+    // #[cfg(target_os = "linux")]
+    // #[test]
+    // fn installs_rpi2w_foundation() -> anyhow::Result<()> {
 
-        // let mut device
-        todo!();
-    }
+
+    //     let dir = tempfile::tempdir()?;
+    //     let image_path = dir.path().join("mocksd.img");
+
+    //     let device = mock_sd(&image_path, 500)?;
+
+        // device.install_foundation("rpi2w")?;
+        // Ok(())
+        // todo!()
+    // }
 }
 
 

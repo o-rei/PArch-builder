@@ -15,6 +15,7 @@ reqwest = { version = "0.13", features = ["blocking"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_yaml = "0.9.34"
 tempdir = "0.3.7"
+tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
 url = { version = "2.5.8", features = ["serde"] }
 

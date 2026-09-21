@@ -37,10 +37,6 @@ pub(crate) fn manifest_dir() -> Result<PathBuf> {
 
 /// Returns the platform-standard path for a named manifest.
 ///
-/// Manifest files live beneath the operating system's standard user
-/// configuration directory. For example, `manifest_path("rpi2w")`
-/// typically resolves to:
-///
 /// ```text
 /// Linux:  ~/.config/parch-builder/manifests/rpi2w.yml
 /// macOS:  ~/Library/Application Support/parch-builder/manifests/rpi2w.yml
@@ -95,4 +91,3 @@ pub fn read(sbc_model: &str) -> Result<Manifest> {
             )
         )
 }
-
