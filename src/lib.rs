@@ -1,7 +1,7 @@
 pub mod fetch;
 pub mod manifest;
-pub mod image;
 pub mod block_device;
+pub mod image;
 
 use std::path::PathBuf;
 use std::process::Command;

@@ -68,9 +68,6 @@ start={root_start_sector}, type=83
 }
 
 
-const IMAGE_SIZE_MIB: u64 = 4096;
-const BOOT_SIZE_MIB: u64 = 512;
-
 const KIB_IN_B: u64 = 1024;
 const MIB_IN_B: u64 = KIB_IN_B * KIB_IN_B;
 

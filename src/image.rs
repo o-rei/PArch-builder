@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, ensure};
 use directories::BaseDirs;
 
-use crate::block_device::{BlockDevice, PartitionPaths, mock_sd};
 use crate::sudo_cmd;
+use crate::block_device::{BlockDevice, PartitionPaths, mock_sd};
 
 
-pub(crate) fn image_cache_dir() -> anyhow::Result<PathBuf> {
+pub fn image_cache_dir() -> anyhow::Result<PathBuf> {
 
     let dirs = BaseDirs::new()
         .context("could not determine user directories")?;

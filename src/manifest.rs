@@ -21,7 +21,7 @@ pub struct Manifest {
 
 
 /// Returns the platform-standard configuration directory for manifests
-pub(crate) fn manifest_dir() -> Result<PathBuf> {
+pub fn manifest_dir() -> Result<PathBuf> {
     let basedirs = BaseDirs::new()
         .context("Could not determine user directories")?;
 
