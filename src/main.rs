@@ -2,8 +2,8 @@
 use clap::{Parser, Subcommand};
 use glob::glob;
 
-mod manifest;
-mod image;
+use pbuilder::{manifest,image};
+
 
 #[derive(Parser)]
 #[command(
