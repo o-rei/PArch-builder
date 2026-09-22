@@ -24,31 +24,41 @@ enum Commands {
     List,
 
     /// Fetch a source from the manifest
-    Fetch {
-        /// sbc_model name indicating yml in manifests
-        sbc_model: String,
+    // Fetch {
+    //     /// sbc_model name indicating yml in manifests
+    //     sbc_model: String,
 
-        /// Whether to overwrite existing foundations
-        #[arg(long, short='o')]
-        overwrite: bool,
+    //     /// Whether to overwrite existing foundations
+    //     #[arg(long, short='o')]
+    //     overwrite: bool,
 
-        /// Whether to create a .img from the fetched .tar.gz
-        #[arg(long)]
-        create_img: bool,
+    //     /// Whether to create a .img from the fetched .tar.gz
+    //     #[arg(long)]
+    //     create_img: bool,
 
-        /// Size of the /boot/ dir; remaining SD space goes to /root/
-        #[arg(short='b', long, default_value_t = 200)]
-        boot_size_mib: u64
-    },
+    //     /// Size of the /boot/ dir; remaining SD space goes to /root/
+    //     #[arg(short='b', long, default_value_t = 200)]
+    //     boot_size_mib: u64
+    // },
 
     /// Build an img of the foundation for the given SBC model
     Build {
         /// Short name of the SBC model matching manifest yml, eg, rpi2w
         sbc_model: String,
+        ///
+        /// Size of the virtual SD card for making the .img in MiB
+        #[arg(long, default_value_t=3_000)]
+        mock_sd_size_mib: u64,
+
+
+        /// Size of the boot partition in MiB
+        #[arg(long, default_value_t=200)]
+        boot_size_mib: u64,
 
         /// Whether to overwrite any existing foundation img
         #[arg(long, short='o')]
-        overwrite: bool
+        overwrite: bool,
+
     },
 
     /// Install a parch platform to a device
@@ -109,60 +119,62 @@ fn main() -> anyhow::Result<()> {
         }
 
         // *** FETCH ***
-        Commands::Fetch {
-            sbc_model,
-            overwrite,
-            create_img,
-            boot_size_mib
-        } => {
+        // Commands::Fetch {
+        //     sbc_model,
+        //     overwrite,
+        //     create_img,
+        //     boot_size_mib
+        // } => {
 
-            println!("Fetching the foundation for SBC model {}...", sbc_model);
+        //     println!("Fetching the foundation for SBC model {}...", sbc_model);
 
-            let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
-                &sbc_model, overwrite
-            )?;
+        //     let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
+        //         &sbc_model, overwrite
+        //     )?;
 
-            // Notify user what was done
-            println!(
-                "Foundation acquired for SBC model {}.", sbc_model
-            );
-            println!(
-                "Foundation has been synced to {}", foundation_path.display()
-            );
+        //     // Notify user what was done
+        //     println!(
+        //         "Foundation acquired for SBC model {}.", sbc_model
+        //     );
+        //     println!(
+        //         "Foundation has been synced to {}", foundation_path.display()
+        //     );
 
-            println!("Image creation requires sudo prrivileges...");
+        //     println!("Image creation requires sudo privileges...");
 
-            if create_img {
+        //     if create_img {
 
-                // See if the foundation .img exists,
-                let image_path = image::image_cache_dir()?
-                    .join(format!("{sbc_model}.img"));
-                if image_path.exists() && !overwrite {
-                    eprintln!(
-                        "Cached image available: {}. Use --overwrite or -o to overwrite.",
-                        image_path.display()
-                    );
-                    return Ok(());
-                }
+        //         // See if the foundation .img exists,
+        //         let image_path = image::image_cache_dir()?
+        //             .join(format!("{sbc_model}.img"));
 
-                let image_path = pbuilder::image::create_foundation_img(
-                    &sbc_model,
-                    boot_size_mib
-                )?;
+        //         if image_path.exists() && !overwrite {
+        //             eprintln!(
+        //                 "Cached image available: {}. Use --overwrite or -o to overwrite.",
+        //                 image_path.display()
+        //             );
+        //             return Ok(());
+        //         }
 
-                println!("Arch Linux ARM image available at {}",
-                    image_path.display());
-            }
+        //         let image_path = pbuilder::image::create_foundation_img(
+        //             &sbc_model,
+        //             boot_size_mib
+        //         )?;
+
+        //         println!("Arch Linux ARM image available at {}",
+        //             image_path.display());
+        //     }
 
 
-            Ok(())
-        }
+        //     Ok(())
+        // }
 
         // *** BUILD ***
         Commands::Build {
             sbc_model,
-            overwrite
-
+            mock_sd_size_mib,
+            boot_size_mib,
+            overwrite,
         } => {
 
             let image_path = image::image_cache_dir()?
@@ -172,6 +184,15 @@ fn main() -> anyhow::Result<()> {
                 eprintln!("Using cached image: {}", image_path.display());
                 return Ok(());
             }
+
+            let image_path = pbuilder::image::create_foundation_img(
+                &sbc_model,
+                mock_sd_size_mib,
+                boot_size_mib
+            )?;
+
+            println!("Arch Linux ARM image available at {}",
+                image_path.display());
 
             Ok(())
         }

@@ -59,8 +59,19 @@ start={root_start_sector}, type=83
     #[cfg(target_os = "linux")]
     fn format_partitions(&self, partition_paths: &PartitionPaths) -> anyhow::Result<()> {
 
-        sudo_cmd("mkfs.vfat").arg(partition_paths.boot.clone());
-        sudo_cmd("mkfs.ext4").arg(partition_paths.root.clone());
+        sudo_cmd("mkfs.vfat")
+            .arg(partition_paths.boot.clone())
+            .status()
+            .with_context(|| "Making vfat on boot partition failed.")?;
+
+        sudo_cmd("mkfs.ext4")
+            .arg(partition_paths.root.clone())
+            .status()
+            .with_context(|| "Making ext4 on root partition failed.")?;
+
+        sudo_cmd("sync")
+            .status()
+            .with_context(|| "Syncing filesystem formatting failed.")?;
 
         Ok(())
     }
@@ -105,6 +116,7 @@ impl LoopDevice {
 
     pub fn detach(&mut self) {
 
+        // Try to detach this loop device, i.e.,
         match detach_loop_device(self) {
             // On success, remove guard for Drop trait
             Ok(()) => {
@@ -175,7 +187,6 @@ fn detach_loop_device(device: &mut LoopDevice) -> anyhow::Result<()> {
               .arg(device.path.clone())  // loop device, eg /dev/loop0
               .status()
     {
-
         Ok(status) if status.success() => { Ok(()) }
 
         Ok(status) => {

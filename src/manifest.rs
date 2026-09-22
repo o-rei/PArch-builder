@@ -15,8 +15,23 @@ use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
-    // pub sbc_model: String,
+    pub sbc_model: String,
     pub foundation_url: Url,
+}
+
+
+/// Represent the SBC model manifest
+impl Manifest {
+
+    pub fn foundation_archive_name(self) -> anyhow::Result<String> {
+
+        self.foundation_url
+            .path_segments()
+            .and_then(|segments| segments.last())
+            .filter(|name| !name.is_empty())
+            .context("URL has no filename")
+            .map(str::to_owned)
+    }
 }
 
 
@@ -48,7 +63,7 @@ pub fn manifest_dir() -> Result<PathBuf> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust
 /// use std::path::Path;
 /// use pbuilder::manifest_path;
 ///
@@ -64,7 +79,7 @@ pub fn manifest_dir() -> Result<PathBuf> {
 ///
 ///  Ok::<(), anyhow::Error>(())
 /// ```
-pub(crate) fn manifest_path(name: &str) -> Result<PathBuf> {
+pub fn manifest_path(name: &str) -> Result<PathBuf> {
     Ok(manifest_dir()?.join(format!("{name}.yml")))
 }
 

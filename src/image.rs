@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
-
 use anyhow::{Context, ensure};
 use directories::BaseDirs;
 
 use crate::sudo_cmd;
 use crate::block_device::{BlockDevice, PartitionPaths, mock_sd};
+use crate::manifest;
 
 
 pub fn image_cache_dir() -> anyhow::Result<PathBuf> {
@@ -23,7 +23,8 @@ pub fn image_cache_dir() -> anyhow::Result<PathBuf> {
 }
 
 
-fn foundation_cache_dir() -> anyhow::Result<PathBuf> {
+fn foundation_archive_dir() -> anyhow::Result<PathBuf> {
+
     let basedirs = BaseDirs::new()
         .context("Could not determine user directories")?;
 
@@ -36,11 +37,15 @@ fn foundation_cache_dir() -> anyhow::Result<PathBuf> {
 }
 
 
-fn foundation_cache_path(sbc_model: &str) -> anyhow::Result<PathBuf> {
+fn foundation_archive_path(sbc_model: &str) -> anyhow::Result<PathBuf> {
 
-    Ok(
-        foundation_cache_dir()?.join(format!("{sbc_model}.yml"))
-    )
+    let foundation_archive_name = manifest::read(sbc_model)?
+        .foundation_archive_name()?;
+
+    let foundation_archive_path = foundation_archive_dir()?
+            .join(foundation_archive_name);
+
+    Ok(foundation_archive_path)
 }
 
 
@@ -67,8 +72,8 @@ fn foundation_cache_path(sbc_model: &str) -> anyhow::Result<PathBuf> {
 ///
 pub fn create_foundation_img(
         sbc_model: &str,
+        mock_sd_size_mib: u64,
         boot_size_mib: u64,
-
     ) -> anyhow::Result<PathBuf> {
 
     let image_path = image_cache_dir()?
@@ -76,19 +81,31 @@ pub fn create_foundation_img(
 
     //--- *** Step 1:
     // Create a mock block storage device to copy the OS filesystem
-    let mut device = mock_sd(&image_path, boot_size_mib)?;
+    let mut device = mock_sd(&image_path, mock_sd_size_mib)?;
+    // Partition the device
+    device.create_partitions(boot_size_mib)?;
 
     let device_path = device.path();
 
+    let mut boot_partition = device_path.as_os_str().to_owned();
+    boot_partition.push("p1");
+    let boot_partition = PathBuf::from(boot_partition);
+
+    let mut root_partition = device_path.as_os_str().to_owned();
+    root_partition.push("p2");
+    let root_partition = PathBuf::from(root_partition);
+
     let partition_paths = PartitionPaths {
-        boot: device_path.join("p1"), root: device_path.join("p2"),
+        boot: boot_partition,
+        root: root_partition
     };
 
     // Create
     device.format_partitions(&partition_paths)?;
 
     // Load the path to the foundation .tar.gz with linux filesystem
-    let foundation_path = foundation_cache_path(sbc_model)?;
+    let foundation_path = foundation_archive_path(sbc_model)?;
+
     // If it doesn't exist, bail with instructions for acquisition
     if !foundation_path.is_file() {
         anyhow::bail!(
@@ -127,8 +144,13 @@ pub fn create_foundation_img(
     sudo_cmd("sync")
         .status()
         .with_context(|| "Failed to sync filesystem after OS extraction")?;
+
     unmount(&device_boot)?;
     unmount(&partition_paths.root)?;
+
+    sudo_cmd("sync")
+        .status()
+        .with_context(|| "Failed to sync filesystem after OS extraction")?;
 
     // Detach the device from the .img acting like the SD card; install remains
     device.detach();
@@ -165,9 +187,16 @@ fn mount(device_partition: &Path,
 }
 
 
-fn unmount(device_path: &PathBuf) -> anyhow::Result<()> {
+fn unmount(mountpoint: &Path) -> anyhow::Result<()> {
 
-    todo!()
+    sudo_cmd("umount")
+        .arg(mountpoint)
+        .status()
+        .with_context(
+            || format!("Failed to unmount {}", mountpoint.display())
+        )?;
+
+    Ok(())
 }
 
 
