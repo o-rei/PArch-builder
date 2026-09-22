@@ -6,6 +6,10 @@ use anyhow::{Context, Result};
 use directories::BaseDirs;
 use indicatif::{ProgressBar, ProgressStyle};
 
+use crate::image;
+use crate::block_device::{BlockDevice, PartitionPaths, mock_sd};
+use crate::sudo_cmd;
+
 
 
 fn foundation_cache_dir() -> Result<PathBuf> {
