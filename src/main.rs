@@ -47,12 +47,12 @@ enum Commands {
         sbc_model: String,
         ///
         /// Size of the virtual SD card for making the .img in MiB
-        #[arg(long, default_value_t=3_000)]
+        #[arg(long, default_value_t=8_000)]
         mock_sd_size_mib: u64,
 
 
         /// Size of the boot partition in MiB
-        #[arg(long, default_value_t=200)]
+        #[arg(long, default_value_t=512)]
         boot_size_mib: u64,
 
         /// Whether to overwrite any existing foundation img
