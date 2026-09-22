@@ -1,9 +1,9 @@
 //! Builder for Arch Linux on Pi-style Platforms.
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 use glob::glob;
 
 mod manifest;
+mod image;
 
 #[derive(Parser)]
 #[command(
@@ -29,7 +29,7 @@ enum Commands {
         sbc_model: String,
 
         /// Whether to overwrite existing foundations
-        #[arg(long)]
+        #[arg(long, short='o')]
         overwrite: bool,
 
         /// Whether to create a .img from the fetched .tar.gz
@@ -39,6 +39,16 @@ enum Commands {
         /// Size of the /boot/ dir; remaining SD space goes to /root/
         #[arg(short='b', long, default_value_t = 200)]
         boot_size_mib: u64
+    },
+
+    /// Build an img of the foundation for the given SBC model
+    Build {
+        /// Short name of the SBC model matching manifest yml, eg, rpi2w
+        sbc_model: String,
+
+        /// Whether to overwrite any existing foundation img
+        #[arg(long, short='o')]
+        overwrite: bool
     },
 
     /// Install a parch platform to a device
@@ -65,55 +75,6 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-
-        // *** FETCH ***
-        Commands::Fetch {
-            sbc_model,
-            overwrite,
-            create_img,
-            boot_size_mib
-        } => {
-
-            println!("Fetching the foundation for SBC model {}...", sbc_model);
-
-            let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
-                &sbc_model, overwrite
-            )?;
-
-            // Notify user what was done
-            println!(
-                "Foundation acquired for SBC model {}.", sbc_model
-            );
-            println!(
-                "Foundation has been synced to {}", foundation_path.display()
-            );
-
-            println!("Image creation requires sudo prrivileges...");
-
-            if create_img {
-                let image_path = pbuilder::image::create_foundation_img(
-                    &sbc_model,
-                    overwrite,
-                    boot_size_mib
-                )?;
-
-                println!("Arch Linux ARM image available at {}",
-                    image_path.display());
-            }
-
-
-            Ok(())
-        }
-
-        // *** INSTALL TO CARTÕES ***
-        // Commands::Install { sbc_model, device_path, dryrun, dryrun_persist } => {
-        Commands::Install { sbc_model, dryrun } => {
-            println!("target: {sbc_model}");
-            println!("dry run: {dryrun}");
-
-            Ok(())
-        }
-
         // *** LIST ***
         Commands::List => {
 
@@ -146,6 +107,84 @@ fn main() -> anyhow::Result<()> {
 
             Ok(())
         }
+
+        // *** FETCH ***
+        Commands::Fetch {
+            sbc_model,
+            overwrite,
+            create_img,
+            boot_size_mib
+        } => {
+
+            println!("Fetching the foundation for SBC model {}...", sbc_model);
+
+            let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
+                &sbc_model, overwrite
+            )?;
+
+            // Notify user what was done
+            println!(
+                "Foundation acquired for SBC model {}.", sbc_model
+            );
+            println!(
+                "Foundation has been synced to {}", foundation_path.display()
+            );
+
+            println!("Image creation requires sudo prrivileges...");
+
+            if create_img {
+
+                // See if the foundation .img exists,
+                let image_path = image::image_cache_dir()?
+                    .join(format!("{sbc_model}.img"));
+                if image_path.exists() && !overwrite {
+                    eprintln!(
+                        "Cached image available: {}. Use --overwrite or -o to overwrite.",
+                        image_path.display()
+                    );
+                    return Ok(());
+                }
+
+                let image_path = pbuilder::image::create_foundation_img(
+                    &sbc_model,
+                    boot_size_mib
+                )?;
+
+                println!("Arch Linux ARM image available at {}",
+                    image_path.display());
+            }
+
+
+            Ok(())
+        }
+
+        // *** BUILD ***
+        Commands::Build {
+            sbc_model,
+            overwrite
+
+        } => {
+
+            let image_path = image::image_cache_dir()?
+                .join(format!("{sbc_model}.img"));
+
+            if image_path.exists() && !overwrite {
+                eprintln!("Using cached image: {}", image_path.display());
+                return Ok(());
+            }
+
+            Ok(())
+        }
+
+        // *** INSTALL TO CARTÕES ***
+        // Commands::Install { sbc_model, device_path, dryrun, dryrun_persist } => {
+        Commands::Install { sbc_model, dryrun } => {
+            println!("target: {sbc_model}");
+            println!("dry run: {dryrun}");
+
+            Ok(())
+        }
+
     }
 }
 

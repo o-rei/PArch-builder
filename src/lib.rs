@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 
-fn sudo_cmd(cmd_name: &str) -> std::process::Command {
+pub fn sudo_cmd(cmd_name: &str) -> std::process::Command {
     let mut sudo_cmd = Command::new("sudo");
     sudo_cmd.arg(cmd_name);
 

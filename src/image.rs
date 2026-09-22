@@ -6,10 +6,8 @@ use directories::BaseDirs;
 use crate::block_device::{BlockDevice, PartitionPaths, mock_sd};
 use crate::sudo_cmd;
 
-const DEFAULT_BOOT_SIZE_MIB: u64 = 200;
 
-
-fn image_cache_dir() -> anyhow::Result<PathBuf> {
+pub(crate) fn image_cache_dir() -> anyhow::Result<PathBuf> {
 
     let dirs = BaseDirs::new()
         .context("could not determine user directories")?;
@@ -69,18 +67,12 @@ fn foundation_cache_path(sbc_model: &str) -> anyhow::Result<PathBuf> {
 ///
 pub fn create_foundation_img(
         sbc_model: &str,
-        overwrite: bool,
         boot_size_mib: u64,
 
     ) -> anyhow::Result<PathBuf> {
 
     let image_path = image_cache_dir()?
         .join(format!("{sbc_model}.img"));
-
-    if image_path.exists() && !overwrite {
-        eprintln!("Using cached image: {}", image_path.display());
-        return Ok(image_path);
-    }
 
     //--- *** Step 1:
     // Create a mock block storage device to copy the OS filesystem
@@ -230,14 +222,4 @@ fn copy_boot_from_root(device_boot: &PathBuf,
 }
 
 
-// # Create an empty image file
-// dd if=/dev/zero of=newimage.img bs=1M count=100
-// # Format the image with ext4
-// mkfs.ext4 newimage.img
-// # Mount the image
-// mkdir /mnt/newimage
-// sudo mount -o loop newimage.img /mnt/newimage
-// # Do some testing, e.g., create a file
-// touch /mnt/newimage/testfile.txt
-// # Unmount the image
-// sudo umount /mnt/newimage
+
