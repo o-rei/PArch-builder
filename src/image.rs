@@ -254,9 +254,10 @@ fn copy_boot_from_root(device_boot: &PathBuf,
 pub fn compress(
     image_path: &Path,
     threads: u32,
-    level: u8,
+    level: i64,
     memory_limit: &str,
     verbose: u8,
+    overwrite: bool
 ) -> anyhow::Result<PathBuf> {
 
 
@@ -265,15 +266,23 @@ pub fn compress(
     }
 
     // Use the `xz` program to compress the image file
-    sudo_cmd("xz")
-        .arg("--keep")
-        .arg(format!("-T{threads}"))
-        .arg(format!("-{level}"))
-        .arg(format!("--memlimit-compress={memory_limit}"))
-        .args(std::iter::repeat_n("-v", verbose.into()))
-        .arg(image_path)
-        .status()
-        .context(format!("xz failed to compress {}", image_path.display()))?;
+    let xz_status =
+        sudo_cmd("xz")
+            .arg("--keep")
+            .arg(format!("-T{threads}"))
+            .arg(format!("-{level}"))
+            .arg(format!("--memlimit-compress={memory_limit}"))
+            .args(overwrite.then_some("--force"))
+            .args(std::iter::repeat_n("-v", verbose.into()))
+            .arg(image_path)
+            .status()
+            .with_context( || { format!("xz failed to run") } )?;
+
+    if !xz_status.success() {
+        anyhow::bail!(
+            "xz tried to compress () but had an error, status: {xz_status}"
+        )
+    }
 
     let compressed_path =
         PathBuf::from(format!("{}.xz", image_path.display()));

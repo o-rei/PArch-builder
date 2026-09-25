@@ -63,14 +63,14 @@ enum Commands {
 
         /// xz compression level from 0 (least compression) to 9 (most)
         #[arg(short, long, default_value_t = 9, value_parser = 0..=9)]
-        level: u8,
+        level: i64,
 
         /// Compression memory limit, set to 75% of available RAM by default
         #[arg(short = 'M', long, default_value = "75%")]
         memory_limit: String,
 
         /// Add xz verbosity; -v gives detailed diagnostics.
-        #[arg(short, long, action = clap::ArgAction::Count)]
+        #[arg(short, long, action = clap::ArgAction::Count, default_value_t = 2)]
         verbose: u8,
 
         /// Flag to overwrite existing compressed file
@@ -205,7 +205,7 @@ fn main() -> anyhow::Result<()> {
             if compressed_path.is_file() && !overwrite {
 
                 println!(
-                    "\n\nCompressed image created at {}",
+                    "\n\nCompressed image already exists at {}, and overwrite is false",
                     compressed_path.display()
                 );
 
@@ -218,7 +218,8 @@ fn main() -> anyhow::Result<()> {
                     threads,
                     level,
                     &memory_limit,
-                    verbose
+                    verbose,
+                    overwrite
                 )?;
 
             println!(
