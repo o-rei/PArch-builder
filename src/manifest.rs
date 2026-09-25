@@ -65,7 +65,7 @@ pub fn manifest_dir() -> Result<PathBuf> {
 ///
 /// ```rust
 /// use std::path::Path;
-/// use pbuilder::manifest_path;
+/// use pbuilder::manifest::manifest_path;
 ///
 /// let path = manifest_path("rpi2w")?;
 ///

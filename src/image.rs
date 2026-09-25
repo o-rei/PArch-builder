@@ -251,4 +251,32 @@ fn copy_boot_from_root(device_boot: &PathBuf,
 }
 
 
+pub fn compress(
+    image_path: &Path,
+    threads: u32,
+    level: u8,
+    memory_limit: &str,
+    verbose: u8,
+) -> anyhow::Result<PathBuf> {
 
+
+    if !image_path.is_file() {
+        anyhow::bail!("image not found: {}", image_path.display());
+    }
+
+    // Use the `xz` program to compress the image file
+    sudo_cmd("xz")
+        .arg("--keep")
+        .arg(format!("-T{threads}"))
+        .arg(format!("-{level}"))
+        .arg(format!("--memlimit-compress={memory_limit}"))
+        .args(std::iter::repeat_n("-v", verbose.into()))
+        .arg(image_path)
+        .status()
+        .context(format!("xz failed to compress {}", image_path.display()))?;
+
+    let compressed_path =
+        PathBuf::from(format!("{}.xz", image_path.display()));
+
+    Ok(compressed_path)
+}

@@ -1,5 +1,6 @@
 //! Builder for Arch Linux on Pi-style Platforms.
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 use glob::glob;
 
 use pbuilder::{manifest,image};
@@ -24,22 +25,14 @@ enum Commands {
     List,
 
     /// Fetch a source from the manifest
-    // Fetch {
-    //     /// sbc_model name indicating yml in manifests
-    //     sbc_model: String,
+    Fetch {
+        /// sbc_model name indicating yml in manifests
+        sbc_model: String,
 
-    //     /// Whether to overwrite existing foundations
-    //     #[arg(long, short='o')]
-    //     overwrite: bool,
-
-    //     /// Whether to create a .img from the fetched .tar.gz
-    //     #[arg(long)]
-    //     create_img: bool,
-
-    //     /// Size of the /boot/ dir; remaining SD space goes to /root/
-    //     #[arg(short='b', long, default_value_t = 200)]
-    //     boot_size_mib: u64
-    // },
+        /// Whether to overwrite existing foundations
+        #[arg(long, short='o')]
+        overwrite: bool,
+    },
 
     /// Build an img of the foundation for the given SBC model
     Build {
@@ -50,7 +43,6 @@ enum Commands {
         #[arg(long, default_value_t=8_000)]
         mock_sd_size_mib: u64,
 
-
         /// Size of the boot partition in MiB
         #[arg(long, default_value_t=512)]
         boot_size_mib: u64,
@@ -58,6 +50,32 @@ enum Commands {
         /// Whether to overwrite any existing foundation img
         #[arg(long, short='o')]
         overwrite: bool,
+    },
+
+    /// Compress a raw .img image with xz
+    Compress {
+        /// Path to the raw .img file
+        image_path: PathBuf,
+
+        /// Number of worker threads for xz comp; 0 sets number of threads automatically
+        #[arg(short = 'T', long, default_value_t = 0)]
+        threads: u32,
+
+        /// xz compression level from 0 (least compression) to 9 (most)
+        #[arg(short, long, default_value_t = 9, value_parser = 0..=9)]
+        level: u8,
+
+        /// Compression memory limit, set to 75% of available RAM by default
+        #[arg(short = 'M', long, default_value = "75%")]
+        memory_limit: String,
+
+        /// Add xz verbosity; -v gives detailed diagnostics.
+        #[arg(short, long, action = clap::ArgAction::Count)]
+        verbose: u8,
+
+        /// Flag to overwrite existing compressed file
+        #[arg(long, short = 'o')]
+        overwrite: bool
 
     },
 
@@ -94,6 +112,7 @@ fn main() -> anyhow::Result<()> {
 
             // Buiild glob string in three steps to respect borrowing
             let mut manifest_glob_str = String::new();
+
             manifest_glob_str.push_str(
                 manifest_path
                     .to_str()
@@ -101,6 +120,7 @@ fn main() -> anyhow::Result<()> {
                         || ".config/parch-builder/manifests"
                     )
             );
+
             manifest_glob_str.push_str("/*.yml");
 
             println!("\nAvailable SBC manifests found with glob\n{}:\n\n",
@@ -119,55 +139,27 @@ fn main() -> anyhow::Result<()> {
         }
 
         // *** FETCH ***
-        // Commands::Fetch {
-        //     sbc_model,
-        //     overwrite,
-        //     create_img,
-        //     boot_size_mib
-        // } => {
+        Commands::Fetch {
+            sbc_model,
+            overwrite,
+        } => {
 
-        //     println!("Fetching the foundation for SBC model {}...", sbc_model);
+            println!("Fetching the foundation for SBC model {}...", sbc_model);
 
-        //     let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
-        //         &sbc_model, overwrite
-        //     )?;
+            let foundation_path = pbuilder::read_manifest_and_fetch_foundation(
+                &sbc_model, overwrite
+            )?;
 
-        //     // Notify user what was done
-        //     println!(
-        //         "Foundation acquired for SBC model {}.", sbc_model
-        //     );
-        //     println!(
-        //         "Foundation has been synced to {}", foundation_path.display()
-        //     );
+            // Notify user what was done
+            println!(
+                "Foundation archive acquired for SBC model {}.", sbc_model
+            );
+            println!(
+                "Foundation archive has been synced to {}", foundation_path.display()
+            );
 
-        //     println!("Image creation requires sudo privileges...");
-
-        //     if create_img {
-
-        //         // See if the foundation .img exists,
-        //         let image_path = image::image_cache_dir()?
-        //             .join(format!("{sbc_model}.img"));
-
-        //         if image_path.exists() && !overwrite {
-        //             eprintln!(
-        //                 "Cached image available: {}. Use --overwrite or -o to overwrite.",
-        //                 image_path.display()
-        //             );
-        //             return Ok(());
-        //         }
-
-        //         let image_path = pbuilder::image::create_foundation_img(
-        //             &sbc_model,
-        //             boot_size_mib
-        //         )?;
-
-        //         println!("Arch Linux ARM image available at {}",
-        //             image_path.display());
-        //     }
-
-
-        //     Ok(())
-        // }
+            Ok(())
+        }
 
         // *** BUILD ***
         Commands::Build {
@@ -195,7 +187,47 @@ fn main() -> anyhow::Result<()> {
                 image_path.display());
 
             Ok(())
-        }
+        },
+
+        Commands::Compress {
+            image_path,
+            threads,
+            level,
+            memory_limit,
+            verbose,
+            overwrite
+        } => {
+
+            let compressed_path = PathBuf::from(
+                format!("{}.xz", image_path.display())
+            );
+
+            if compressed_path.is_file() && !overwrite {
+
+                println!(
+                    "\n\nCompressed image created at {}",
+                    compressed_path.display()
+                );
+
+                return Ok(())
+            }
+
+            let compressed_path =
+                pbuilder::image::compress(
+                    &image_path,
+                    threads,
+                    level,
+                    &memory_limit,
+                    verbose
+                )?;
+
+            println!(
+                "\n\nCompressed image created at {}",
+                compressed_path.display()
+            );
+
+            Ok(())
+        },
 
         // *** INSTALL TO CARTÕES ***
         // Commands::Install { sbc_model, device_path, dryrun, dryrun_persist } => {
